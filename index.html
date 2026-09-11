@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Bitso Business — Settings Navigation Prototype (Lo-Fi)</title>
+<style>
+  :root {
+    --accent: #5463FF;
+    --accent-light: #DFE6FF;
+    --ink: #1E1E1E;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --bg-sidebar: #FAFAFA;
+    --bg-app: #FFFFFF;
+    --danger: #D14343;
+    --danger-light: #FDEAEA;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: #fff;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* ---------- App bar ---------- */
+  .appbar {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-app);
+  }
+  .appbar .logo { display:flex; align-items:center; gap:8px; font-weight:700; font-size:16px; }
+  .appbar .logo .dot { width:22px; height:22px; border-radius:6px; background:var(--accent); }
+  .appbar .right { display:flex; align-items:center; gap:14px; color:var(--muted); font-size:13px; }
+  .appbar .avatar { width:28px; height:28px; border-radius:50%; background:var(--accent-light); color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
+
+  /* ---------- Layout ---------- */
+  .layout { display:flex; height: calc(100vh - 64px); }
+
+  /* ---------- Sidebar (shared shell) ---------- */
+  .sidebar {
+    width: 248px;
+    flex-shrink: 0;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    transition: width .15s ease;
+    padding: 16px 0;
+  }
+  .sidebar.rail { width: 72px; padding: 16px 0; }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { background: #F0F1FF; }
+  .nav-item.active { background: var(--accent-light); border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .nav-item .ic { width:18px; height:18px; border-radius:4px; background:#D9D9D9; flex-shrink:0; }
+
+  .nav-divider { height:1px; background:var(--border); margin:12px 20px; }
+
+  .group-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    padding: 14px 20px 6px;
+    font-weight: 700;
+  }
+  .group-label:first-child { padding-top: 4px; }
+
+  .back-control {
+    display:flex; align-items:center; gap:8px;
+    padding: 4px 20px 16px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .back-control:hover { text-decoration: underline; }
+
+  /* Icon-only rail (Full-Page Flow state) */
+  .rail-item {
+    width: 40px; height: 40px; margin: 0 auto 10px;
+    border-radius: 10px;
+    background: #ECECEC;
+    color: var(--muted);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 11px; font-weight: 700;
+    cursor: default;
+  }
+  .rail-item.active { background: var(--accent); color: #fff; }
+  .rail-divider { height:1px; background:var(--border); margin: 10px 16px 14px; }
+
+  /* ---------- Content column ---------- */
+  .content-col { flex:1; display:flex; flex-direction:column; min-width:0; }
+
+  .flow-subbar {
+    display:none;
+    align-items:center; gap:8px;
+    height: 52px; padding: 0 32px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px; font-weight: 600; color: var(--ink);
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .flow-subbar .crumb { cursor:pointer; color: var(--accent); }
+  .flow-subbar .crumb:hover { text-decoration:underline; }
+  .flow-subbar .crumb-current { color: var(--ink); cursor:default; }
+  .flow-subbar .crumb-sep { color: var(--muted); }
+  .flow-subbar .back-label { cursor:pointer; }
+  .flow-subbar .back-label:hover { color: var(--accent); }
+
+  .content-scroll { flex:1; overflow-y:auto; padding: 40px 48px; max-width: 760px; }
+
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 28px; }
+  h2 { font-size: 15px; margin: 28px 0 4px; }
+  .field-desc { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  hr.sep { border:none; border-top:1px solid var(--border); margin: 24px 0; }
+
+  .row { display:flex; align-items:center; justify-content:space-between; padding: 10px 0; }
+  .row .label { font-size:14px; }
+  .row .value { font-size:13px; color:var(--muted); }
+
+  .toggle { width:38px; height:22px; border-radius:12px; background:#D9D9D9; position:relative; cursor:pointer; flex-shrink:0; }
+  .toggle.on { background: var(--accent); }
+  .toggle::after { content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:left .15s; }
+  .toggle.on::after { left:18px; }
+
+  .btn { display:inline-block; padding:9px 18px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; border:none; }
+  .btn-primary { background: var(--accent); color:#fff; }
+  .btn-secondary { background:#F0F1FF; color:var(--accent); }
+  .btn-danger { background: var(--danger); color:#fff; }
+  .btn-link { color: var(--accent); font-weight:600; cursor:pointer; background:none; border:none; padding:0; font-size:14px; }
+
+  .card { border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:12px; }
+  .card .title { font-weight:600; font-size:14px; margin-bottom:4px; }
+  .card .desc { font-size:13px; color:var(--muted); }
+
+  .banner { background:#FFF7E0; border:1px solid #F3D98B; border-radius:8px; padding:12px 16px; font-size:13px; margin-bottom:20px; }
+  .danger-zone { border:1px solid var(--danger-light); background:var(--danger-light); border-radius:10px; padding:18px; margin-top:32px; }
+  .danger-zone h2 { color: var(--danger); margin-top:0; }
+
+  .empty-state { text-align:center; padding: 60px 20px; color:var(--muted); }
+  .empty-state .box { width:64px; height:64px; border-radius:12px; background:#F0F1FF; margin:0 auto 14px; }
+
+  .pill-tabs { display:flex; gap:8px; margin-bottom:20px; }
+  .pill-tabs .pill { padding:6px 16px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer; background:#F0F1FF; color:var(--accent); }
+  .pill-tabs .pill.active { background:var(--accent); color:#fff; }
+
+  .breadcrumb-note { font-size:12px; color:var(--muted); margin-bottom:4px; }
+
+  select, input[type=text] { padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:14px; width:100%; max-width:280px; }
+  .step-indicator { display:flex; align-items:center; gap:12px; margin-bottom:24px; }
+  .step-dots { display:flex; gap:6px; }
+  .step-dot { width:24px; height:4px; border-radius:2px; background:var(--border); }
+  .step-dot.done { background: var(--accent); }
+  .step-label { font-size:12px; color:var(--muted); }
+  .qr-box { width:160px; height:160px; background:#F0F1FF; border:1px dashed var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:12px; font-weight:700; margin-bottom:16px; }
+  .code-box { font-family:monospace; background:#F5F5F5; border-radius:6px; padding:10px 14px; font-size:14px; display:inline-block; margin-bottom:16px; letter-spacing:2px; }
+  .backup-codes { display:grid; grid-template-columns:1fr 1fr; gap:8px; background:#F5F5F5; border-radius:8px; padding:16px; font-family:monospace; font-size:13px; margin-bottom:20px; }
+  .success-icon { width:56px; height:56px; border-radius:50%; background:#E3F8E9; color:#2E9E4F; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:700; margin-bottom:16px; }
+  label.f-label { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+  .field { margin-bottom:18px; }
+</style>
+</head>
+<body class="state-main">
+
+  <div class="appbar">
+    <div class="logo"><div class="dot"></div> business</div>
+    <div class="right">
+      <span>🌐 MX</span>
+      <span>Soporte</span>
+      <div class="avatar">MA</div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content-col">
+      <div class="flow-subbar" id="flowSubbar"></div>
+      <div class="content-scroll" id="content"></div>
+    </div>
+  </div>
+
+<script>
+/* ---------------- Data model ---------------- */
+const MAIN_ITEMS = [
+  { id:'inicio', label:'Inicio' },
+  { id:'saldos', label:'Saldos' },
+  { id:'pagos', label:'Pagos' },
+  { id:'precios', label:'Precios' },
+  { id:'trading-top', label:'Trading' },
+  { id:'reportes-top', label:'Reportes' },
+];
+const MAIN_BOTTOM = [
+  { id:'apis', label:'APIs' },
+  { id:'preferencias', label:'Preferencias' },
+];
+
+const GROUPS = [
+  { name:'Cuenta', items:[
+    { id:'cuenta', label:'Cuenta', render: renderCuenta },
+    { id:'seguridad', label:'Seguridad', render: renderSeguridad },
+    { id:'dispositivos', label:'Dispositivos', render: renderDispositivos },
+    { id:'solvencia', label:'Prueba de solvencia', render: renderSolvencia },
+  ]},
+  { name:'Pix', items:[
+    { id:'claves', label:'Mis claves', render: renderClaves },
+    { id:'limites-pix', label:'Mis límites', render: renderLimitesPix },
+  ]},
+  { name:'Preferencias de trading', items:[
+    { id:'trading', label:'Protección de slippage', render: renderTrading },
+    { id:'limites', label:'Límites de cuenta', render: renderLimites },
+    { id:'autoventa', label:'Autoventa', render: renderAutoventa },
+  ]},
+  { name:'Historial y reportes', items:[
+    { id:'historial', label:'Historial', render: renderHistorial },
+    { id:'informe-tx', label:'Informe de transacciones', render: renderInformeTx },
+    { id:'informes', label:'Informes anuales', render: renderInformes },
+    { id:'declaraciones', label:'Declaraciones de envío', render: renderDeclaraciones },
+  ]},
+  { name:'Cuentas y beneficiarios', items:[
+    { id:'beneficiarios', label:'Beneficiarios', render: renderBeneficiarios },
+    { id:'cuentas-guardadas', label:'Cuentas guardadas', render: renderCuentasGuardadas },
+  ]},
+  { name:'General', items:[
+    { id:'pref-usuario', label:'Preferencias de usuario', render: renderPrefUsuario },
+    { id:'notificaciones', label:'Notificaciones', render: renderNotificaciones },
+    { id:'monedas', label:'Monedas', render: renderMonedas },
+  ]},
+  { name:'Desarrolladores', items:[
+    { id:'api', label:'Llaves de API', render: renderApi },
+  ]},
+];
+
+const FLOWS = {
+  '2fa': { title:'Habilitar autenticación de dos factores', returnLabel:'Seguridad', returnItem:'seguridad', render: renderFlow2FA },
+  'delete-account': { title:'Eliminar cuenta', returnLabel:'Cuenta', returnItem:'cuenta', render: renderFlowDelete },
+  'add-beneficiary': { title:'Agregar persona beneficiaria', returnLabel:'Beneficiarios', returnItem:'beneficiarios', render: renderFlowAddBeneficiary },
+};
+
+/* ---------------- State ---------------- */
+let state = { view:'main', activeItem:null, flow:null, subview:null };
+
+function findItem(id){ for (const g of GROUPS) for (const it of g.items) if (it.id===id) return it; return null; }
+
+/* ---------------- Navigation actions ---------------- */
+function goMain(){ state = { view:'main', activeItem:null, flow:null, subview:null }; render(); }
+function goContextual(itemId){ state = { view:'contextual', activeItem: itemId || GROUPS[0].items[0].id, flow:null, subview:null }; render(); }
+function selectItem(id){ state.activeItem = id; state.subview = null; render(); }
+function openSubview(name){ state.subview = name; render(); }
+function closeSubview(){ state.subview = null; render(); }
+function startFlow(flowId, fromView, fromItem){
+  state.flow = { id: flowId, fromView, fromItem, step: 1 };
+  state.view = 'flow';
+  render();
+}
+function exitFlow(){
+  const f = state.flow;
+  if (!f) { goMain(); return; }
+  state.view = f.fromView;
+  state.activeItem = f.fromItem;
+  state.flow = null;
+  render();
+}
+function flowNext(){ state.flow.step++; render(); }
+function flowBack(){
+  if (state.flow.step <= 1) { exitFlow(); return; }
+  state.flow.step--; render();
+}
+function stepProgress(step, total){
+  let dots = '';
+  for (let i=1;i<=total;i++) dots += `<div class="step-dot ${i<=step?'done':''}"></div>`;
+  return `<div class="step-indicator"><div class="step-dots">${dots}</div><span class="step-label">Paso ${step} de ${total}</span></div>`;
+}
+
+/* ---------------- Sidebar rendering ---------------- */
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  if (state.view === 'flow') {
+    sb.className = 'sidebar rail';
+    const activeMain = 'preferencias'; // demo assumes flows always launched from within Settings for this prototype
+    let html = '';
+    MAIN_ITEMS.forEach(it => html += railItem(it, false));
+    html += '<div class="rail-divider"></div>';
+    MAIN_BOTTOM.forEach(it => html += railItem(it, it.id===activeMain));
+    sb.innerHTML = html;
+    return;
+  }
+  if (state.view === 'main') {
+    sb.className = 'sidebar';
+    let html = '';
+    MAIN_ITEMS.forEach(it => html += `<div class="nav-item" onclick="mainClick('${it.id}')"><div class="ic"></div>${it.label}</div>`);
+    html += '<div class="nav-divider"></div>';
+    MAIN_BOTTOM.forEach(it => html += `<div class="nav-item" onclick="mainClick('${it.id}')"><div class="ic"></div>${it.label}</div>`);
+    sb.innerHTML = html;
+    return;
+  }
+  // contextual
+  sb.className = 'sidebar';
+  let html = `<div class="back-control" onclick="goMain()">&larr; Volver a la app</div>`;
+  GROUPS.forEach(g => {
+    html += `<div class="group-label">${g.name}</div>`;
+    g.items.forEach(it => {
+      const activeCls = it.id === state.activeItem ? 'active' : '';
+      html += `<div class="nav-item ${activeCls}" onclick="selectItem('${it.id}')">${it.label}</div>`;
+    });
+  });
+  sb.innerHTML = html;
+}
+function railItem(it, active){
+  const initials = it.label.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  return `<div class="rail-item ${active?'active':''}">${initials}</div>`;
+}
+function mainClick(id){
+  if (id === 'preferencias') { goContextual(); return; }
+  // any other main item: just a placeholder browsing page
+  alert('Pantalla de "' + id + '" — fuera del alcance de este prototipo (solo Preferencias está desarrollado).');
+}
+
+/* ---------------- Content rendering ---------------- */
+function render(){
+  document.body.className = 'state-' + state.view;
+  renderSidebar();
+  const content = document.getElementById('content');
+  const subbar = document.getElementById('flowSubbar');
+  if (state.view === 'flow') {
+    const f = FLOWS[state.flow.id];
+    subbar.style.display = 'flex';
+    subbar.innerHTML = `<span class="back-label" onclick="exitFlow()">&larr; Volver a ${f.returnLabel}</span>`;
+    content.innerHTML = f.render();
+    content.scrollTop = 0;
+    return;
+  }
+  if (state.view === 'main') {
+    subbar.style.display = 'none';
+    content.innerHTML = `<h1>Inicio</h1><p class="subtitle">Selecciona "Preferencias" en el menú para explorar el nuevo patrón de Settings.</p>`;
+    return;
+  }
+  // contextual
+  const item = findItem(state.activeItem);
+  if (state.activeItem === 'limites-pix' && state.subview) {
+    // Navigational layers always track a path. We render that SAME path
+    // two ways depending on its length — not two different systems:
+    //   1 ancestor  -> back-label ("<- Volver a X") — the minimal honest
+    //                  rendering of a length-1 path, not a different control.
+    //   2+ ancestors -> full breadcrumb trail, since there's now a segment
+    //                  worth skipping directly to.
+    const path = [{ label:'Mis límites', sub:null }];
+    if (state.subview === 'personal-limits' || state.subview === 'edit-daytime') {
+      path.push({ label:'Cuentas personales', sub:'personal-limits' });
+    }
+    if (state.subview === 'edit-daytime') {
+      path.push({ label:'Editar periodo diurno', sub:'edit-daytime' });
+    }
+    subbar.style.display = 'flex';
+    const ancestors = path.length - 1; // segments before the current one
+    if (ancestors === 1) {
+      const parent = path[0];
+      subbar.innerHTML = `<span class="back-label" onclick="openSubview(${parent.sub===null ? 'null' : `'${parent.sub}'`})">&larr; Volver a ${parent.label}</span>`;
+    } else {
+      subbar.innerHTML = path.map((c, i) => {
+        const sep = i > 0 ? '<span class="crumb-sep">/</span>' : '';
+        const isLast = i === path.length - 1;
+        if (isLast) return sep + `<span class="crumb-current">${c.label}</span>`;
+        return sep + `<span class="crumb" onclick="openSubview(${c.sub===null ? 'null' : `'${c.sub}'`})">${c.label}</span>`;
+      }).join('');
+    }
+  } else {
+    subbar.style.display = 'none';
+  }
+  content.innerHTML = item ? item.render() : '';
+  content.scrollTop = 0;
+}
+
+/* ---------------- Page content templates ---------------- */
+function renderCuenta(){
+  return `
+    <h1>Cuenta</h1>
+    <p class="subtitle">Aquí puedes visualizar la información relacionada a tu cuenta.</p>
+    <h2>Información registrada</h2>
+    <div class="row"><div class="label">Correo electrónico</div><div class="value">maria.magnani@bitso.com</div></div>
+    <div class="row"><div class="label">Nombre</div><div class="value">María</div></div>
+    <div class="row"><div class="label">ID de usuario</div><div class="value">255340</div></div>
+    <hr class="sep">
+    <h2>Alpha Fees (Market vs MXN)</h2>
+    <div class="row"><div class="label">Comisión del Maker</div><div class="value">0.600%</div></div>
+    <div class="row"><div class="label">Comisión del Taker</div><div class="value">0.780%</div></div>
+    <div class="danger-zone">
+      <h2>Eliminar cuenta</h2>
+      <p class="field-desc">Esta acción es permanente y no se puede deshacer.</p>
+      <button class="btn btn-danger" onclick="startFlow('delete-account','contextual','cuenta')">Eliminar cuenta</button>
+    </div>
+  `;
+}
+function renderSeguridad(){
+  return `
+    <h1>Seguridad</h1>
+    <p class="subtitle">Configura la seguridad de tu cuenta.</p>
+    <div class="banner">Nivel de seguridad de la cuenta: <strong>Débil</strong></div>
+    <h2>Token de dos factores (2FA)</h2>
+    <p class="field-desc">Protege tu cuenta con un código que cambia cada 30 segundos.</p>
+    <button class="btn btn-primary" onclick="startFlow('2fa','contextual','seguridad')">Activar</button>
+    <hr class="sep">
+    <h2>Código de correo seguro</h2>
+    <div class="row"><div class="label">Estado</div><div class="value">Desactivado</div></div>
+  `;
+}
+function renderDispositivos(){
+  return `
+    <h1>Dispositivos</h1>
+    <p class="subtitle">Puedes desconectar los dispositivos que ya no uses o no reconozcas.</p>
+    <div class="card"><div class="title">Chrome Mac OS X</div><div class="desc">Dispositivo actual</div></div>
+    <button class="btn-link">Desconectar todos los dispositivos</button>
+  `;
+}
+function renderSolvencia(){
+  return `
+    <h1>Prueba de solvencia</h1>
+    <div class="banner">El informe no incluye los fondos utilizados para hacer staking.</div>
+    <p class="field-desc">Consulta los últimos informes de solvencia emitidos y autenticados con tecnología de conocimiento cero (ZK) — verificamos tus fondos sin exponer tu información.</p>
+    <div class="empty-state"><div class="box"></div>Tu cuenta no ha tenido saldo desde que comenzamos con los reportes.</div>
+  `;
+}
+function renderClaves(){
+  return `<h1>Mis claves</h1><p class="subtitle">Administra tus claves Pix.</p><div class="empty-state"><div class="box"></div>Aún no tienes claves registradas.</div>`;
+}
+function renderLimitesPix(){
+  if (state.subview === 'edit-daytime') {
+    return `
+      <h1>Editar periodo diurno</h1>
+      <p class="subtitle">Define el límite de retiro para el horario diurno (6h–20h).</p>
+      <div class="field"><label class="f-label">Límite (BRL)</label><input type="text" placeholder="0"></div>
+      <button class="btn btn-primary" onclick="openSubview('personal-limits')">Guardar</button>
+      <button class="btn-link" style="margin-left:12px" onclick="openSubview('personal-limits')">Cancelar</button>
+    `;
+  }
+  if (state.subview === 'personal-limits') {
+    return `
+      <h1>Límites para cuentas personales</h1>
+      <div class="row" style="cursor:pointer" onclick="openSubview('edit-daytime')"><div class="label">☀️ Periodo diurno (6h–20h)</div><div class="value">0 BRL &rsaquo;</div></div>
+      <div class="row"><div class="label">🌙 Periodo nocturno (20h–6h)</div><div class="value">0 BRL</div></div>
+    `;
+  }
+  return `
+    <h1>Mis límites</h1>
+    <div class="banner">Por seguridad, todos los cambios se reflejarán en un plazo de entre 24 y 48 horas.</div>
+    <div class="card" style="cursor:pointer" onclick="openSubview('personal-limits')"><div class="title">Cuentas personales</div><div class="desc">Gestiona límites de retiro.</div></div>
+    <div class="card"><div class="title">Cuentas empresariales</div><div class="desc">Gestiona límites de retiro.</div></div>
+    <div class="card"><div class="title">Saque/Retiro</div><div class="desc">Gestiona los límites de retiro de efectivo.</div></div>
+    <div class="card"><div class="title">Cuentas confiables</div><div class="desc">Gestiona tus contactos para hacer retiros sin límites por periodo.</div></div>
+  `;
+}
+function renderTrading(){
+  return `
+    <h1>Protección de slippage</h1>
+    <p class="subtitle">Ajusta tus preferencias y protégete frente al riesgo.</p>
+    <p class="field-desc">Al activarla, tus órdenes de mercado y stop-loss estarán protegidas de cambios inesperados en los precios.</p>
+    <div class="row"><div class="label">Activada</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+  `;
+}
+function renderLimites(){
+  return `
+    <h1>Límites de cuenta</h1>
+    <div class="pill-tabs"><div class="pill active">Efectivo</div><div class="pill">Cripto</div></div>
+    <div class="row"><div class="label">Depósitos mensuales</div><div class="value">0.00 de 0.00 MXN</div></div>
+    <div class="row"><div class="label">Retiros mensuales</div><div class="value">0.00 de 0.00 MXN</div></div>
+  `;
+}
+function renderAutoventa(){
+  return `
+    <h1>Autoventa</h1>
+    <p class="subtitle">El BTC que recibas se convertirá automáticamente a una moneda local.</p>
+    <div class="banner">Estas son órdenes de mercado — se ejecutan al instante.</div>
+    <div class="field"><label class="f-label">Moneda local</label><select><option>MXN</option></select></div>
+    <button class="btn btn-primary">Generar</button>
+  `;
+}
+function renderMonedas(){
+  return `
+    <h1>Monedas</h1>
+    <p class="subtitle">Activa las monedas fiat que quieres ver en tu wallet.</p>
+    <div class="row"><div class="label">Pesos Mexicanos (MXN)</div><div class="value">Activo</div></div>
+    <div class="row"><div class="label">Pesos Colombianos (COP)</div><button class="btn-link">Activar</button></div>
+    <div class="row"><div class="label">Dólares (USD)</div><div class="value">Activo</div></div>
+  `;
+}
+function renderHistorial(){
+  return `
+    <h1>Historial</h1>
+    <div class="pill-tabs"><div class="pill active">Todas</div><div class="pill">Depósitos</div><div class="pill">Retiros</div><div class="pill">Conversiones</div></div>
+    <div class="empty-state"><div class="box"></div>Aquí podrás ver tu historial de transacciones.</div>
+  `;
+}
+function renderInformeTx(){
+  return `
+    <h1>Informe de transacciones</h1>
+    <p class="subtitle">Los recibirás en tu correo electrónico después de que generemos el archivo.</p>
+    <div class="field"><label class="f-label">Desde</label><input type="text" placeholder="dd/MM/yyyy"></div>
+    <button class="btn btn-secondary">Solicitar</button>
+  `;
+}
+function renderInformes(){
+  return `
+    <h1>Informes anuales</h1>
+    <p class="subtitle">Solicita tus reportes fiscales o anuales de actividad.</p>
+    <div class="empty-state"><div class="box"></div>Aún no has solicitado ningún informe.</div>
+  `;
+}
+function renderDeclaraciones(){
+  return `<h1>Declaraciones de envío</h1><p class="subtitle">Consulta las declaraciones asociadas a tus envíos internacionales.</p><div class="empty-state"><div class="box"></div>No hay declaraciones disponibles.</div>`;
+}
+function renderBeneficiarios(){
+  return `
+    <h1>Beneficiarios</h1>
+    <p class="subtitle">Las personas beneficiarias reciben el porcentaje que les asignes de tu cuenta, en caso de fallecimiento.</p>
+    <button class="btn btn-secondary" onclick="startFlow('add-beneficiary','contextual','beneficiarios')">Agregar</button>
+    <div class="empty-state"><div class="box"></div>Agrega a tus personas beneficiarias para verlas aquí.</div>
+  `;
+}
+function renderCuentasGuardadas(){
+  return `
+    <h1>Cuentas guardadas</h1>
+    <div class="pill-tabs"><div class="pill active">Cripto</div><div class="pill">Efectivo</div></div>
+    <div class="empty-state"><div class="box"></div>Todavía no tienes cuentas guardadas.</div>
+  `;
+}
+function renderPrefUsuario(){
+  return `
+    <h1>Preferencias de usuario</h1>
+    <p class="subtitle">Configura tu perfil de acuerdo a tus preferencias.</p>
+    <div class="field"><label class="f-label">Idioma</label><select><option>Español MX</option></select></div>
+    <div class="field"><label class="f-label">Moneda de referencia</label><select><option>Pesos Mexicanos (MXN)</option></select></div>
+  `;
+}
+function renderNotificaciones(){
+  return `
+    <h1>Notificaciones</h1>
+    <p class="subtitle">Configura qué notificaciones deseas recibir por email.</p>
+    <div class="row"><div class="label">Correo electrónico</div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+    <div class="row"><div class="label">SMS</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+    <div class="row"><div class="label">Notificaciones push</div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+  `;
+}
+function renderApi(){
+  return `<h1>Llaves de API</h1><p class="subtitle">Activa 2FA para gestionar tus llaves de API.</p><button class="btn btn-primary" onclick="startFlow('2fa','contextual','api')">Habilitar 2FA →</button>`;
+}
+
+/* ---------------- Flow templates ---------------- */
+function renderFlow2FA(){
+  const step = state.flow.step;
+  const total = 5;
+  const nav = (nextLabel, opts) => {
+    opts = opts || {};
+    return `
+      <div style="margin-top:24px">
+        <button class="btn btn-primary" onclick="${opts.onNext || 'flowNext()'}">${nextLabel}</button>
+        <button class="btn-link" style="margin-left:12px" onclick="flowBack()">${step===1?'Cancelar':'Atrás'}</button>
+      </div>`;
+  };
+
+  if (step === 1) {
+    return `
+      ${stepProgress(step, total)}
+      <h1>Habilitar autenticación de dos factores</h1>
+      <p class="subtitle">Agrega una capa extra de seguridad a tu cuenta. Cada vez que inicies sesión o hagas un retiro, te pediremos un código temporal generado por una app de autenticación.</p>
+      <div class="card"><div class="title">¿Por qué activarlo?</div><div class="desc">Reduce el riesgo de acceso no autorizado, incluso si alguien conoce tu contraseña.</div></div>
+      ${nav('Comenzar')}
+    `;
+  }
+  if (step === 2) {
+    return `
+      ${stepProgress(step, total)}
+      <h1>Descarga una app de autenticación</h1>
+      <p class="subtitle">Necesitas una app como Google Authenticator, Authy o 1Password para generar tus códigos.</p>
+      <div class="card"><div class="title">Google Authenticator</div><div class="desc">Disponible para iOS y Android.</div></div>
+      <div class="card"><div class="title">Authy</div><div class="desc">Disponible para iOS, Android y escritorio.</div></div>
+      ${nav('Ya la tengo instalada')}
+    `;
+  }
+  if (step === 3) {
+    return `
+      ${stepProgress(step, total)}
+      <h1>Escanea este código QR</h1>
+      <p class="subtitle">Abre tu app de autenticación y escanea el código, o ingresa la clave manualmente.</p>
+      <div class="qr-box">QR CODE</div>
+      <p class="field-desc">¿No puedes escanear? Ingresa esta clave manualmente:</p>
+      <div class="code-box">K3JV&nbsp;&nbsp;9XQP&nbsp;&nbsp;7ZM2&nbsp;&nbsp;A8LT</div>
+      ${nav('Continuar')}
+    `;
+  }
+  if (step === 4) {
+    return `
+      ${stepProgress(step, total)}
+      <h1>Ingresa el código de verificación</h1>
+      <p class="subtitle">Escribe el código de 6 dígitos que aparece en tu app de autenticación.</p>
+      <div class="field"><label class="f-label">Código de verificación</label><input type="text" placeholder="000000" maxlength="6"></div>
+      ${nav('Confirmar')}
+    `;
+  }
+  // step 5 — success
+  return `
+    <div class="success-icon">&#10003;</div>
+    <h1>¡Autenticación de dos factores activada!</h1>
+    <p class="subtitle">Guarda estos códigos de respaldo en un lugar seguro — te permiten acceder a tu cuenta si pierdes tu dispositivo.</p>
+    <div class="backup-codes">
+      <div>4F82-9K1L</div><div>7Z3Q-6MXP</div>
+      <div>A1D9-2VBN</div><div>K8E4-0QJR</div>
+      <div>P2X7-5TCY</div><div>9WM3-1FGH</div>
+    </div>
+    <button class="btn btn-primary" onclick="exitFlow()">Listo</button>
+  `;
+}
+function renderFlowDelete(){
+  return `
+    <h1>Eliminar cuenta</h1>
+    <p class="subtitle">Esta acción es permanente. Antes de continuar, retira tus fondos — una vez eliminada la cuenta no podrás recuperar tu historial ni tus datos.</p>
+    <div class="banner">Verifica que tu saldo esté en $0.00 en todas las monedas antes de continuar.</div>
+    <button class="btn btn-danger" onclick="exitFlow()">Confirmar eliminación</button>
+    <button class="btn-link" style="margin-left:12px" onclick="exitFlow()">Cancelar</button>
+  `;
+}
+function renderFlowAddBeneficiary(){
+  return `
+    <h1>Agregar persona beneficiaria</h1>
+    <p class="subtitle">Ingresa los datos de la persona y el porcentaje que le corresponde.</p>
+    <div class="field"><label class="f-label">Nombre completo</label><input type="text"></div>
+    <div class="field"><label class="f-label">Porcentaje asignado</label><input type="text" placeholder="%"></div>
+    <button class="btn btn-primary" onclick="exitFlow()">Guardar</button>
+    <button class="btn-link" style="margin-left:12px" onclick="exitFlow()">Cancelar</button>
+  `;
+}
+
+/* ---------------- Init ---------------- */
+render();
+</script>
+</body>
+</html>
